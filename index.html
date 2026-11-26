@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>TCT Browser</title>
+  <style>
+    :root { --tabs:#dee1e6; --tab:#c8ccd2; --tab-act:#fff; --barra:#fff; --texto:#1f2430; --sub:#5f6673;
+            --linea:#ccd0d6; --campo:#f1f3f4; --boton:#eceef1; --inicio:#f6f7fb; --acento:#4b3fd6; }
+    body[data-tema="oscuro"] { --tabs:#171a21; --tab:#232731; --tab-act:#2b2f3a; --barra:#2b2f3a; --texto:#e8eaf0;
+            --sub:#9aa1b0; --linea:#3a3f4d; --campo:#1b1e26; --boton:#3a3f4d; --inicio:#20232c; --acento:#8f86ff; }
+    body.inco { --tabs:#1d1033; --tab:#32204f; --tab-act:#4a2f78; --barra:#4a2f78; --texto:#f1eaff;
+            --sub:#c9b8ec; --linea:#6b4aa6; --campo:#2a1747; --boton:#5d3d94; --inicio:#2a1747; --acento:#c4b0ff; }
+    [hidden] { display: none !important; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, 'Segoe UI', sans-serif; display: flex; flex-direction: column;
+           height: 100vh; color: var(--texto); background: var(--barra); }
+    button { font: inherit; color: inherit; cursor: pointer; }
+
+    #tabs { display: flex; background: var(--tabs); padding: 6px 6px 0; gap: 4px; align-items: flex-end; overflow-x: auto; }
+    .tab { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--tab); color: var(--texto);
+           border-radius: 8px 8px 0 0; cursor: pointer; flex: 0 1 200px; min-width: 70px; }
+    .tab.activa { background: var(--tab-act); }
+    .tab.inco { background: #32204f; color: #f1eaff; }
+    .tab.inco.activa { background: #4a2f78; }
+    .titulo { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
+    .cerrar { font-size: 11px; padding: 2px 6px; border-radius: 50%; }
+    .cerrar:hover { background: rgba(128,128,128,.35); }
+    .mas { background: transparent; border: 0; padding: 7px 10px; font-size: 16px; border-radius: 6px; color: var(--texto); }
+    .mas:hover { background: rgba(128,128,128,.25); }
+
+    #barra { display: flex; gap: 6px; padding: 6px 8px; background: var(--barra); border-bottom: 1px solid var(--linea); align-items: center; }
+    #barra button { border: 0; background: var(--boton); border-radius: 16px; min-width: 32px; height: 32px; padding: 0 10px; }
+    #barra button:hover { filter: brightness(.93); }
+    #barra button:disabled { opacity: .4; cursor: default; }
+    #url { flex: 1; height: 32px; border: 1px solid var(--linea); border-radius: 16px; padding: 0 14px; font-size: 14px;
+           background: var(--campo); color: var(--texto); }
+    :focus-visible { outline: 2px solid var(--acento); outline-offset: 1px; }
+
+    #contenido { flex: 1; position: relative; overflow: hidden; }
+    webview { position: absolute; inset: 0; width: 100%; height: 100%; }
+    webview.oculta { display: none; }
+
+    #inicio { position: absolute; inset: 0; background: var(--inicio); display: flex; align-items: center;
+              justify-content: center; overflow: auto; z-index: 2; }
+    .caja { width: min(640px, 90%); text-align: center; padding: 24px 0; }
+    .saludo { margin: 0; color: var(--sub); }
+    .logo { font-size: 44px; margin: 4px 0 22px; letter-spacing: -1px; }
+    #busqueda { width: 100%; height: 46px; border-radius: 24px; border: 1px solid var(--linea); padding: 0 20px;
+                font-size: 16px; background: var(--campo); color: var(--texto); }
+    .nota { color: var(--sub); font-size: 14px; line-height: 1.5; margin-top: 18px; }
+    .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; margin-top: 26px; }
+    .tile { background: var(--campo); border: 1px solid var(--linea); border-radius: 12px; padding: 14px 8px;
+            display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .tile:hover { border-color: var(--acento); }
+    .ic { width: 38px; height: 38px; border-radius: 50%; background: var(--acento); color: var(--barra);
+          display: grid; place-items: center; font-weight: 700; }
+    .nom { font-size: 12px; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+    #panel { position: absolute; top: 0; right: 0; bottom: 0; width: 340px; max-width: 100%; background: var(--barra);
+             border-left: 1px solid var(--linea); z-index: 5; display: flex; flex-direction: column; }
+    #panel header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px;
+                    border-bottom: 1px solid var(--linea); }
+    #panel h2 { margin: 0; font-size: 16px; }
+    #panel header button, .fila button { background: transparent; border: 0; border-radius: 6px; padding: 4px 8px; }
+    #panel header button:hover, .fila button:hover { background: var(--boton); }
+    #lista { flex: 1; overflow-y: auto; padding: 6px; }
+    .fila { display: flex; align-items: center; gap: 4px; border-radius: 8px; }
+    .fila:hover { background: var(--boton); }
+    .fila .ir { flex: 1; text-align: left; overflow: hidden; min-width: 0; }
+    .fila .t { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fila .u { display: block; font-size: 11px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #vaciar { margin: 8px; padding: 8px; border: 1px solid var(--linea); border-radius: 8px; background: transparent; }
+  </style>
+</head>
+<body data-tema="claro">
+  <div id="tabs">
+    <button class="mas" id="nuevaTab" title="Nueva pestaña (Ctrl+T)">＋</button>
+    <button class="mas" id="nuevaInco" title="Pestaña de incógnito (Ctrl+Mayús+N)">🕶</button>
+  </div>
+
+  <div id="barra">
+    <button id="atras" title="Atrás (Alt+←)">←</button>
+    <button id="adelante" title="Adelante (Alt+→)">→</button>
+    <button id="recargar" title="Recargar (Ctrl+R)">⟳</button>
+    <button id="inicioBtn" title="Página de inicio">⌂</button>
+    <input id="url" placeholder="Busca en Google o escribe una dirección">
+    <button id="estrella" title="Marcador (Ctrl+D)">☆</button>
+    <button id="bMarc" title="Marcadores (Ctrl+Mayús+O)">Marcadores</button>
+    <button id="bHist" title="Historial (Ctrl+H)">Historial</button>
+    <button id="bTema" title="Modo oscuro">🌙</button>
+  </div>
+
+  <div id="contenido">
+    <div id="inicio" hidden></div>
+    <aside id="panel" hidden>
+      <header><h2 id="panelTitulo"></h2><button id="panelCerrar" title="Cerrar">✕</button></header>
+      <div id="lista"></div>
+      <button id="vaciar" hidden>Borrar todo el historial</button>
+    </aside>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
