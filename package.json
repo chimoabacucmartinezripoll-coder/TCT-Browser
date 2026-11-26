@@ -1,0 +1,21 @@
+{
+  "name": "tct-browser",
+  "productName": "TCT Browser",
+  "version": "1.1.0",
+  "description": "TCT Browser, el navegador de TichmoTech",
+  "main": "main.js",
+  "author": "TichmoTech",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "41.1.1",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.tichmotech.tctbrowser",
+    "productName": "TCT Browser",
+    "win": { "target": "nsis" }
+  }
+}
